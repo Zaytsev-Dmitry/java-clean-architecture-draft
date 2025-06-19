@@ -1,0 +1,255 @@
+openapi: 3.0.1
+info:
+  title: Clean architecture API
+  version: '1.0.0'
+servers:
+  - url: 'http://localhost:8080'
+    description: local
+paths:
+  /user/registration:
+    post:
+      tags:
+        - User-Service
+      operationId: userRegistration
+      description: 'Регистрация User'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegistrationRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SingleUserBackendResponse'
+        '400':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '500':
+          $ref: '#/components/responses/500'
+      security:
+        - bearer-key: [ ]
+  /user/all:
+    get:
+      tags:
+        - User-Service
+      operationId: getAllUsers
+      parameters:
+        - $ref: '#/components/parameters/CursorOptional'
+        - $ref: '#/components/parameters/PageSizeParamOptional'
+      description: 'Получение всех пользователей'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListUserBackendResponse'
+        '404':
+          $ref: '#/components/responses/404'
+        '401':
+          $ref: '#/components/responses/401'
+        '500':
+          $ref: '#/components/responses/500'
+      security:
+        - bearer-key: [ ]
+#--------------------------------------------------------------------------------------------------------#
+  /post/create:
+    post:
+      tags:
+        - Post-Service
+      operationId: postCreate
+      description: 'Создание поста'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostCreateRequest'
+      responses:
+        '204':
+          description: No content
+        '400':
+          $ref: '#/components/responses/400'
+        '404':
+          $ref: '#/components/responses/400'
+        '401':
+          $ref: '#/components/responses/401'
+        '500':
+          $ref: '#/components/responses/500'
+      security:
+        - bearer-key: [ ]
+#--------------------------------------------------------------------------------------------------------#
+components:
+  responses:
+    '400':
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BackendErrorResponse'
+    '401':
+      description: UNAUTHORIZED
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BackendErrorResponse'
+    404:
+      description: NOT_FOUND
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BackendErrorResponse'
+    '500':
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/BackendErrorResponse'
+#--------------------------------------------------------------------------------------------------------#
+  parameters:
+    CursorOptional:
+      name: cursor
+      in: query
+      schema:
+        type: integer
+        format: int64
+    PageSizeParamOptional:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+#--------------------------------------------------------------------------------------------------------#
+  schemas:
+    UserRegistrationRequest:
+      type: object
+      required:
+        - firstName
+        - lastName
+        - email
+        - username
+      properties:
+        firstName:
+          type: string
+          minLength: 2
+          maxLength: 50
+          pattern: '^[a-zA-Zа-яА-Я\s]+$'
+          example: "Иван"
+        lastName:
+          type: string
+          minLength: 2
+          maxLength: 50
+          pattern: '^[a-zA-Zа-яА-Я\s]+$'
+          example: "Иванов"
+        email:
+          type: string
+          format: email
+          maxLength: 300
+          example: "ivan.ivanov@example.com"
+        username:
+          type: string
+          minLength: 2
+          maxLength: 50
+          pattern: '^[a-zA-Z0-9_]+$'
+          example: "ivan_ivanov"
+#--------------------------------------------------------------------------------------------------------#
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        username:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        isActive:
+          type: boolean
+        role:
+          type: string
+          enum:
+            - USER
+            - ADMIN
+            - SUPER_ADMIN
+#--------------------------------------------------------------------------------------------------------#
+    PostCreateRequest:
+      type: object
+      properties:
+        userId:
+          type: string
+        content:
+          type: string
+#--------------------------------------------------------------------------------------------------------#
+    BackendErrorResponse:
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/MetaData'
+        errorCode:
+          type: string
+          enum:
+            - USER_NOT_FOUND
+            - USER_ALREADY_EXISTS
+            - INVALID_EMAIL
+            - INVALID_USERNAME
+            - VALIDATION_ERROR
+        description:
+          type: string
+#--------------------------------------------------------------------------------------------------------#
+    BasicBackendResponse:
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/MetaData'
+        errorCode:
+          type: string
+        description:
+          type: string
+#--------------------------------------------------------------------------------------------------------#
+    MetaData:
+      type: object
+      properties:
+        timestamp:
+          type: string
+        currentCursor:
+          type: integer
+          format: int64
+        pageSize:
+          type: integer
+        totalCount:
+          type: integer
+          format: int64
+#--------------------------------------------------------------------------------------------------------#
+    ListUserBackendResponse:
+      allOf:
+        - $ref: '#/components/schemas/BasicBackendResponse'
+        - type: object
+          properties:
+            payload:
+              type: array
+              items:
+                $ref: '#/components/schemas/UserResponse'
+    SingleUserBackendResponse:
+      allOf:
+        - $ref: '#/components/schemas/BasicBackendResponse'
+        - type: object
+          properties:
+            payload:
+              $ref: '#/components/schemas/UserResponse'
+#--------------------------------------------------------------------------------------------------------#
+  securitySchemes:
+    bearer-key:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
