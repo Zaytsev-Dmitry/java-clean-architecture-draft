@@ -198,7 +198,14 @@ public class OpenApiParser {
             // Проверяем успешные коды ответов без регулярок
             if (line.equals("200:") || line.equals("201:") || line.equals("204:") ||
                 line.equals("'200':") || line.equals("'201':") || line.equals("'204':")) {
-                // Ищем $ref в этом response
+                
+                // Для кода 204 (No content) устанавливаем VOID
+                if (line.equals("204:") || line.equals("'204':")) {
+                    endpoint.setReturnType("VOID");
+                    return;
+                }
+                
+                // Ищем $ref в этом response для кодов 200 и 201
                 for (int j = i + 1; j < lines.length; j++) {
                     String responseLine = lines[j].trim();
                     if (responseLine.startsWith("$ref:")) {
