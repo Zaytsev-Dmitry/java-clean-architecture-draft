@@ -51,7 +51,6 @@ public class OpenApiParser {
             // Ищем пути (начинаются с /)
             if (line.startsWith("/") && line.endsWith(":")) {
                 currentPath = line.substring(0, line.length() - 1);
-                continue;
             }
             
             // Ищем HTTP методы
@@ -65,7 +64,6 @@ public class OpenApiParser {
                 currentEndpoint = new EndpointInfo();
                 currentEndpoint.setPath(currentPath);
                 currentEndpoint.setMethod(method);
-                continue;
             }
             
             // Парсим operationId
